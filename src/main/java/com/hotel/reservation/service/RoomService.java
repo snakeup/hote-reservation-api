@@ -34,11 +34,11 @@ public class RoomService {
                 .orElseThrow(() -> new ResourceNotFoundException("Room", id));
     }
 
-    // SMELL: returns the raw Room entity instead of a RoomResponse DTO, leaking
-    // the domain model out of the service layer. Callers could accidentally mutate
-    // or serialize fields that should not be exposed publicly.
-    public List<Room> findAvailable() {
-        return roomRepository.findByAvailableTrue();
+    public List<RoomResponse> findAvailable() {
+        return roomRepository.findByAvailableTrue()
+                .stream()
+                .map(RoomResponse::from)
+                .toList();
     }
 
     public List<RoomResponse> findByType(RoomType roomType) {
@@ -56,10 +56,6 @@ public class RoomService {
                 .toList();
     }
 
-    // SMELL: the condition should be checkOut.isBefore(checkIn) || checkOut.isEqual(checkIn),
-    // or equivalently !checkOut.isAfter(checkIn). Using only isBefore accepts same-day
-    // check-in/out (0-night stay), which makes no business sense and would produce
-    // a totalPrice of zero. This is the kind of subtle off-by-one that unit tests catch.
     private void validateDateRange(LocalDate checkIn, LocalDate checkOut) {
         if (checkOut.isBefore(checkIn)) {
             throw new IllegalArgumentException("Check-out date must be after check-in date");

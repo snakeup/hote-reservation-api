@@ -43,10 +43,6 @@ public class GlobalExceptionHandler {
         return detail;
     }
 
-    // SMELL: this catch-all swallows the real exception message and always returns
-    // a vague 500. Callers and on-call engineers have no idea what actually went wrong.
-    // The original exception should at minimum be logged, and specific exceptions like
-    // IllegalArgumentException should be handled with a proper 400 instead.
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleEverythingElse(Exception ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");

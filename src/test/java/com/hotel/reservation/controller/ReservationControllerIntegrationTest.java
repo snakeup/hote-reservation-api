@@ -75,5 +75,119 @@ class ReservationControllerIntegrationTest {
                 .build();
     }
 
+    @Nested
+    @DisplayName("POST /reservations")
+    class BookReservation {
+
+        @Test
+        @DisplayName("valid booking returns 201, PENDING status, and Location header")
+        void validBooking_returns201() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "guestId", 2,
+                            "roomId", 2,
+                            "checkInDate", "2025-12-01",
+                            "checkOutDate", "2025-12-05"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            assertThat(response.getBody()).containsEntry("status", "PENDING");
+            assertThat(response.getBody().get("totalPrice")).isNotNull();
+            assertThat(response.getHeaders().getLocation()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("missing guestId returns 400")
+        void missingGuestId_returns400() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "roomId", 3,
+                            "checkInDate", "2025-12-01",
+                            "checkOutDate", "2025-12-05"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("missing checkInDate returns 400")
+        void missingCheckInDate_returns400() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "guestId", 2,
+                            "roomId", 3,
+                            "checkOutDate", "2025-12-05"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("non-existent guestId returns 404")
+        void unknownGuest_returns404() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "guestId", 9999,
+                            "roomId", 3,
+                            "checkInDate", "2025-12-01",
+                            "checkOutDate", "2025-12-05"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("non-existent roomId returns 404")
+        void unknownRoom_returns404() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "guestId", 2,
+                            "roomId", 9999,
+                            "checkInDate", "2025-12-01",
+                            "checkOutDate", "2025-12-05"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("dates overlapping the seed reservation return 409")
+        void overlappingDates_returns409() {
+            ResponseEntity<Map> response = restClient.post()
+                    .uri("/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "guestId", 2,
+                            "roomId", 1,
+                            "checkInDate", "2025-09-02",
+                            "checkOutDate", "2025-09-04"))
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (req, res) -> {})
+                    .toEntity(Map.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+    }
+
     // TODO: add your test classes here
 }

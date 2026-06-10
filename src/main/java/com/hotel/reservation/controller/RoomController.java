@@ -1,6 +1,5 @@
 package com.hotel.reservation.controller;
 
-import com.hotel.reservation.domain.entity.Room;
 import com.hotel.reservation.domain.enums.RoomType;
 import com.hotel.reservation.dto.response.RoomResponse;
 import com.hotel.reservation.service.RoomService;
@@ -48,12 +47,7 @@ public class RoomController {
         if (type != null) {
             return ResponseEntity.ok(roomService.findByType(type));
         }
-        // SMELL: findAvailable() returns List<Room> (raw entity) instead of List<RoomResponse>.
-        // The unsafe cast below is the symptom — the fix belongs in RoomService.findAvailable().
-        // At runtime Jackson will serialize it, but it leaks the domain model through the API.
-        @SuppressWarnings("unchecked")
-        List<RoomResponse> rooms = (List<RoomResponse>) (List<?>) roomService.findAvailable();
-        return ResponseEntity.ok(rooms);
+        return ResponseEntity.ok(roomService.findAvailable());
     }
 
     @GetMapping("/{id}")

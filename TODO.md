@@ -137,8 +137,6 @@ you designed in Phase 2. Use the seed data as the known starting state:
 
 ## If you finish early
 
-- Look at `RoomService.findAvailable()` — what does it return? Is that correct?
-- Look at `RoomController` — can you spot any issue related to the above?
 - Look at `ReservationRepository.findReservationsForGuest()` — is this efficient?
 - Look at `GlobalExceptionHandler` — what happens to `IllegalArgumentException` today?
   Is that the right HTTP status for a client mistake? How would you fix it?

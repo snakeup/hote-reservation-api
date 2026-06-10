@@ -11,8 +11,6 @@ import java.util.List;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    // SMELL: findAll() loads the entire reservations table into memory and then
-    // filters in Java. This should be a derived query: findByGuestId(Long guestId).
     default List<Reservation> findReservationsForGuest(Long guestId) {
         return findAll().stream()
                 .filter(r -> r.getGuest().getId().equals(guestId))

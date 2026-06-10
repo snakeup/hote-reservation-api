@@ -136,7 +136,5 @@ class RoomServiceTest {
             verifyNoInteractions(roomRepository);
         }
 
-        // NOTE for candidate: there is a subtle bug in validateDateRange().
-        // Can you find and fix it? Write a test that exposes it first.
     }
 }
