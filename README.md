@@ -17,10 +17,10 @@
 docker compose up -d
 
 # 2. Run the application
-./mvnw spring-boot:run
+mvn spring-boot:run
 
 # 3. Run all tests (requires Docker)
-./mvnw test
+mvn test
 ```
 
 API available at `http://localhost:8080`.
@@ -65,7 +65,7 @@ Payment:      PENDING ──► COMPLETED
 
 | Layer | What |
 |---|---|
-| Entities | `Room`, `Guest`, `Payment` fully annotated. `Reservation` needs your JPA annotations. |
+| Entities | All four entities (`Room`, `Guest`, `Reservation`, `Payment`) are fully annotated. |
 | Repositories | All four repositories with custom queries. |
 | Service | `RoomService` fully implemented — use it as a reference. |
 | Controller | `RoomController` fully implemented — use it as a reference. |

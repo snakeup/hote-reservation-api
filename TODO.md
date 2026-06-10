@@ -30,9 +30,6 @@ Design and implement a REST API for the hotel reservation system. You decide the
 HTTP methods, query vs path parameters, request and response shapes, and HTTP status codes.
 Study `RoomController` for the conventions used in this codebase.
 
-The retrieve-by-id and booking endpoints are already implemented in the controller.
-Study them as a reference before adding the two new ones.
-
 The retrieve-by-id and booking endpoints are already implemented in the controller —
 study them as a reference before adding the two new ones.
 
