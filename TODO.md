@@ -1,136 +1,137 @@
 # TODO — Hotel Reservation API
 
-**Total time: 90 minutes**
+**Total time: 70 minutes**
 
-Spend the first 10 minutes reading the codebase before writing any code.
+Spend the first 5 minutes reading the codebase before writing any code.
 The reference implementations (`RoomService`, `RoomController`, `RoomServiceTest`,
 `RoomControllerIntegrationTest`) show the patterns and conventions to follow.
 
 ---
 
-## Phase 1 — Familiarisation (10 min)
+## Phase 1 — Familiarisation (5 min)
 
 Before touching any code:
 
-- Read `RoomService` and `RoomController` end to end.
-- Read `V1__create_initial_schema.sql` to understand the data model.
+- Read `RoomService` and `RoomController` end to end — these are the reference implementations.
 - Read `RoomServiceTest` and `RoomControllerIntegrationTest` as test examples.
+- Read `ReservationService` — `book()` and `findById()` are already implemented.
+  Study how they are written before starting your own work.
 - Run the application (`docker compose up -d` then `./mvnw spring-boot:run`)
   and confirm it starts cleanly.
 - Run the tests (`./mvnw test`) and confirm the existing ones pass.
 
 ---
 
-## Phase 2 — JPA (10 min)
-
-**File:** `src/main/java/com/hotel/reservation/domain/entity/Reservation.java`
-
-Add JPA annotations to every field so Hibernate can map the entity to the
-`reservations` table. The schema is already in `V1__create_initial_schema.sql`
-— read it first. Hibernate is configured with `ddl-auto=validate`, so it will
-fail on startup with a clear error if your annotations don't match.
-
-Fields to annotate:
-
-| Field | Notes |
-|---|---|
-| `id` | Primary key, auto-generated. Which strategy matches a `BIGSERIAL` column? |
-| `guest` | Many-to-one. FK: `guest_id`. Think about fetch strategy at scale. |
-| `room` | Many-to-one. FK: `room_id`. Same fetch strategy question. |
-| `checkInDate` | Column: `check_in_date`, not nullable. |
-| `checkOutDate` | Column: `check_out_date`, not nullable. |
-| `status` | Stored as its name (`"CONFIRMED"`), never as its ordinal. |
-| `totalPrice` | Column: `total_price`, precision 10, scale 2. |
-| `createdAt` | Column: `created_at`. Must never change after the row is inserted. |
-| `updatedAt` | Column: `updated_at`. |
-| `payment` | Inverse side of a one-to-one. Owning FK is on `payments`. Deleting a reservation must delete its payment. |
-
-**You know you're done when `./mvnw spring-boot:run` starts without Hibernate errors.**
-
----
-
-## Phase 3 — Service (20 min)
-
-**File:** `src/main/java/com/hotel/reservation/service/ReservationService.java`
-
-Implement the `book(CreateReservationRequest request)` method.
-
-Business rules:
-
-1. `checkOutDate` must be strictly after `checkInDate`. Throw `IllegalArgumentException` if not.
-   Think carefully about the equal-date edge case.
-2. Guest must exist — throw `ResourceNotFoundException` if not.
-3. Room must exist — throw `ResourceNotFoundException` if not.
-4. No PENDING, CONFIRMED, or CHECKED_IN reservation may overlap the requested
-   period for that room. Use `ReservationRepository.existsOverlappingReservation()`.
-   Throw `RoomNotAvailableException` if overlap detected.
-5. Persist a new `Reservation` (its constructor calculates `totalPrice` for you).
-6. Persist a new `Payment` linked to that reservation.
-7. Return a `ReservationResponse`.
-
-Steps 5 and 6 must be **atomic**. If persisting the payment fails, the reservation
-must also be rolled back.
-
----
-
-## Phase 4 — Controller (10 min)
+## Phase 2 — API Design & Controller (20 min)
 
 **File:** `src/main/java/com/hotel/reservation/controller/ReservationController.java`
 
-Implement these endpoints:
+Design and implement a REST API for the hotel reservation system. You decide the paths,
+HTTP methods, query vs path parameters, request and response shapes, and HTTP status codes.
+Study `RoomController` for the conventions used in this codebase.
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/reservations` | List all reservations |
-| GET | `/reservations/{id}` | Single reservation, 404 if not found |
-| GET | `/guests/{guestId}/reservations` | All reservations for a guest |
-| POST | `/reservations` | Book a reservation — return **201** with `Location` header |
+The retrieve-by-id and booking endpoints are already implemented in the controller.
+Study them as a reference before adding the two new ones.
 
-Follow the same patterns as `RoomController`. The controller must stay thin —
-no business logic, just HTTP concerns.
+The retrieve-by-id and booking endpoints are already implemented in the controller —
+study them as a reference before adding the two new ones.
+
+**Capabilities to implement:**
 
 ---
 
-## Phase 5 — Tests (40 min)
+**1. Search reservations with optional filters.**
 
-This is the main part of the exercise. Quality matters more than quantity.
+Hotel staff need to look up reservations without knowing all the details upfront.
+The search must support any combination of the following filters — omitting a filter
+means "match anything" for that field. All matching reservations are returned ordered
+by check-in date, earliest first.
+
+- **Guest** — front-desk staff look up all reservations for a specific guest when
+  handling a check-in question or a complaint. Filtering by guest should return
+  every reservation that guest has ever made, regardless of status.
+
+- **Status** — operations staff filter by status to manage their workload. For example,
+  pulling all CONFIRMED reservations to prepare for upcoming arrivals, or all
+  CHECKED_IN reservations to know who is currently in the hotel.
+
+- **Room type** — the revenue team filters by room type (SINGLE, DOUBLE, SUITE,
+  PENTHOUSE) to analyse how each category is performing.
+
+- **Date range (`from` / `to`)** — filters on the check-in date, both ends inclusive.
+  For example, `from=2025-09-01&to=2025-09-30` returns every reservation whose
+  check-in falls within September. Either bound can be omitted independently.
+
+---
+
+**2. Operations dashboard summary.**
+
+The operations team needs a single endpoint that gives them a snapshot of current
+reservation activity without having to run multiple queries. The response shape is yours
+to define (see `ReservationSummaryResponse`) — think about what a hotel manager would
+need to see at a glance to understand the state of the business:
+
+- **Booking counts by status** — how many reservations are in each state right now?
+  This tells the duty manager how many check-ins are expected, how many guests are
+  currently in the hotel, and how many bookings are awaiting confirmation.
+
+- **Revenue by room type** — total revenue broken down by room category (SINGLE,
+  DOUBLE, SUITE, PENTHOUSE). The finance team uses this to understand which room
+  types drive the most income and to inform pricing decisions.
+
+- **Average length of stay** — the mean number of nights across all reservations.
+  Housekeeping and scheduling use this to plan resources.
+
+- **Total revenue** — the overall revenue sum across all active reservations.
+  "Active" means any status other than CANCELLED — a cancelled booking was never
+  charged and must not be counted.
+
+**You know you're done when** the app starts and both new endpoints respond correctly.
+
+---
+
+## Phase 3 — Stream Service (20 min)
+
+**File:** `src/main/java/com/hotel/reservation/service/ReservationService.java`
+
+Implement two methods using the Java Stream API:
+
+### `search(Long guestId, ReservationStatus status, RoomType roomType, LocalDate from, LocalDate to)`
+All parameters are nullable. A null value means "match anything" — passing only
+`guestId=2` should return all of that guest's reservations regardless of other fields.
+`from` and `to` are inclusive filters on check-in date. Results sorted by check-in date ascending.
+
+### `summarize()`
+Compute what the operations dashboard needs: booking volumes, revenue figures, stay patterns.
+"Active" means any status other than CANCELLED — a cancelled booking generated no revenue.
+
+Before implementing `summarize()`, define the fields in `ReservationSummaryResponse`
+(`src/main/java/com/hotel/reservation/dto/response/ReservationSummaryResponse.java`) —
+that is part of the task.
+
+**You know you're done when** the endpoints from Phase 2 return correct data.
+
+---
+
+## Phase 4 — Tests (25 min)
+
+Quality matters more than quantity.
 
 ### Unit tests
 **File:** `src/test/java/com/hotel/reservation/service/ReservationServiceTest.java`
 
-The class skeleton and fixtures are provided. Implement the test bodies.
-
-Required scenarios for `book()`:
-
-| Scenario | Expected |
-|---|---|
-| Valid request | Returns `ReservationResponse`, saves reservation AND payment |
-| `checkOut` equals `checkIn` | `IllegalArgumentException` |
-| `checkOut` before `checkIn` | `IllegalArgumentException` |
-| Guest not found | `ResourceNotFoundException` |
-| Room not found | `ResourceNotFoundException` |
-| Overlapping reservation | `RoomNotAvailableException`, nothing saved |
+Mock setup and fixtures are provided. Write tests for `search()` and `summarize()`.
+Structure and name the tests however you see fit.
 
 ### Integration tests
 **File:** `src/test/java/com/hotel/reservation/controller/ReservationControllerIntegrationTest.java`
 
-The class skeleton, Testcontainers setup, and `@Nested` structure are provided.
-Implement the test bodies.
+Testcontainers and `RestClient` are already wired. Write tests for the endpoints
+you designed in Phase 2. Use the seed data as the known starting state:
 
-Required scenarios for `POST /reservations`:
-
-| Scenario | Expected HTTP |
-|---|---|
-| Valid booking | 201 + body with `status: PENDING` + `Location` header |
-| Missing `guestId` | 400 |
-| Missing `checkInDate` | 400 |
-| Non-existent `guestId` | 404 |
-| Non-existent `roomId` | 404 |
-| Dates overlap existing reservation | 409 |
-| `checkOut` equals `checkIn` | ??? — what does it return today, and what *should* it return? |
-
-That last row is intentional — the current codebase returns an unexpected status.
-Fix it if you have time, or note it for the discussion.
+- Guest 1 (Alice Johnson) has one CONFIRMED reservation on room 1 (SINGLE, 101)
+  from 2025-09-01 to 2025-09-05.
+- Rooms 2–7 and guests 2–3 have no existing reservations — use them for happy-path tests.
 
 ---
 
@@ -140,5 +141,6 @@ Fix it if you have time, or note it for the discussion.
 - Look at `RoomController` — can you spot any issue related to the above?
 - Look at `ReservationRepository.findReservationsForGuest()` — is this efficient?
 - Look at `GlobalExceptionHandler` — what happens to `IllegalArgumentException` today?
+  Is that the right HTTP status for a client mistake? How would you fix it?
 - Look at `RoomService.validateDateRange()` — is the boundary condition correct?
   Write a test that proves your answer.

@@ -1,45 +1,28 @@
 package com.hotel.reservation.controller;
 
+import com.hotel.reservation.dto.request.CreateReservationRequest;
+import com.hotel.reservation.dto.response.ReservationResponse;
 import com.hotel.reservation.service.ReservationService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 
 /**
- * TODO [TASK-CONTROLLER]: Expose the reservation API over HTTP.
+ * TODO [TASK-API]: Add the search and summary endpoints.
  *
- * Guests and hotel staff need to interact with reservations through a REST API.
- * Staff want to list all reservations or look up one by id. Guests want to see
- * their own reservation history. Anyone can book a new reservation by POSTing
- * to this controller, which delegates all validation and business logic to
- * ReservationService — this controller must stay thin.
+ * Required capabilities (see TODO.md Phase 2 for the full requirements):
+ *   1. Search reservations — optional filters: guest, status, room type, date range
+ *   2. Operations dashboard summary
  *
- * Required endpoints:
- *
- *   GET  /reservations                    — list all reservations
- *   GET  /reservations/{id}               — single reservation, 404 if not found
- *   GET  /guests/{guestId}/reservations   — all reservations for a specific guest
- *   POST /reservations                    — book a new reservation
- *
- * Things to think about:
- *
- *   - A successful booking should return HTTP 201, not 200. It should also
- *     include a Location header pointing to the new resource so the caller
- *     knows where to retrieve it. How does ServletUriComponentsBuilder help?
- *
- *   - The POST request body must pass Bean Validation before hitting the service.
- *     Which annotation on the method parameter triggers that?
- *
- *   - Why does /guests/{guestId}/reservations make more REST sense than
- *     /reservations?guestId=123? Are there cases where the query-param form
- *     would actually be the better choice?
- *
- *   - Exceptions like ResourceNotFoundException and RoomNotAvailableException
- *     are already handled elsewhere in the codebase — find it before adding
- *     your own try/catch.
- *
- * Study RoomController first — follow the same patterns.
+ * The retrieve-by-id and booking endpoints are already implemented below as reference.
+ * You decide the paths, HTTP methods, parameters, and response shapes for the new ones.
+ * Study RoomController for conventions.
  */
 @RestController
+@RequestMapping("/reservations")
 public class ReservationController {
 
     private final ReservationService reservationService;
@@ -48,11 +31,21 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-    // TODO: implement GET /reservations
+    @GetMapping("/{id}")
+    public ResponseEntity<ReservationResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(reservationService.findById(id));
+    }
 
-    // TODO: implement GET /reservations/{id}
+    @PostMapping
+    public ResponseEntity<ReservationResponse> book(@Valid @RequestBody CreateReservationRequest request) {
+        ReservationResponse response = reservationService.book(request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+        return ResponseEntity.created(location).body(response);
+    }
 
-    // TODO: implement GET /guests/{guestId}/reservations
-
-    // TODO: implement POST /reservations — return 201 with Location header
+    // TODO: implement search endpoint
+    // TODO: implement summary endpoint
 }

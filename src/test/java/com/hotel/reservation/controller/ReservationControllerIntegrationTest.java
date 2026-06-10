@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * TODO [TASK-TESTS-INTEGRATION]: Integration-test POST /reservations.
+ * TODO [TASK-TESTS-INTEGRATION]: Integration-test the Reservation API endpoints.
  *
  * These tests boot the full Spring application against a real PostgreSQL database
  * (spun up by Testcontainers). Flyway runs automatically, applying the schema (V1)
@@ -29,34 +29,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * already wired — you write the tests. Follow the same patterns as
  * RoomControllerIntegrationTest.
  *
- * Seed data to know:
- *   - Room 1 (101, SINGLE) has a CONFIRMED reservation for guest 1 from 2025-09-01
- *     to 2025-09-05. Use this range to trigger the conflict scenario.
+ * Test the endpoints you designed in Phase 2. Use the seed data as the known state:
+ *   - Guest 1 (Alice Johnson) has one CONFIRMED reservation on room 1 (SINGLE, 101)
+ *     from 2025-09-01 to 2025-09-05.
  *   - Rooms 2–7 and guests 2–3 have no existing reservations — use them for
- *     happy-path and other tests.
+ *     happy-path and booking tests.
  *
- * To POST a JSON body:
- *   ResponseEntity<ReservationResponse> response = restClient.post()
- *       .uri("/reservations")
- *       .contentType(MediaType.APPLICATION_JSON)
- *       .body(Map.of("guestId", 2, "roomId", 2,
- *                    "checkInDate", "2025-12-01", "checkOutDate", "2025-12-05"))
- *       .retrieve()
- *       .onStatus(status -> status.isError(), (req, res) -> {})
- *       .toEntity(ReservationResponse.class);
- *
- * Scenarios to cover (structure and name the tests as you see fit):
- *   - A valid booking returns 201, status "PENDING", a non-null totalPrice, and a Location header
- *   - Missing required fields (e.g. guestId, checkInDate) return 400
- *   - A non-existent guestId returns 404
- *   - A non-existent roomId returns 404
- *   - Dates that overlap the seed reservation return 409
- *   - checkOutDate equal to checkInDate — what status does the API return today?
- *     Is that the right status for a client mistake? What would you change?
+ * Structure and name the tests however you see fit. Think about:
+ *   - Happy path for each endpoint (correct data, correct HTTP status)
+ *   - Filter combinations for the search endpoint (single filter, multiple filters,
+ *     no match, the seed reservation as the known anchor)
+ *   - The summary endpoint: does the seed data show up in the expected fields?
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@DisplayName("POST /reservations — Integration Tests")
+@DisplayName("Reservation API — Integration Tests")
 class ReservationControllerIntegrationTest {
 
     static PostgreSQLContainer<?> postgres;

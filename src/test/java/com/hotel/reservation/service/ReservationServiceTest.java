@@ -31,24 +31,36 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * TODO [TASK-TESTS-UNIT]: Unit-test ReservationService.book().
+ * TODO [TASK-TESTS-UNIT]: Unit-test ReservationService.search() and summarize().
  *
  * These tests run without Spring and without a database. Every collaborator is a
- * Mockito mock, so each test is laser-focused on one behaviour of the booking logic.
- * The setup and fixtures are already provided — you write the tests.
+ * Mockito mock, so each test is laser-focused on one behaviour of the data processing
+ * logic. The mock setup and fixtures are provided — you write the tests.
  *
- * Think of the booking flow as a pipeline of guards:
- *   date validation → guest exists → room exists → no overlap → persist both → return response
- * A good test suite verifies that each guard fires correctly and that a failure in one
- * guard leaves no side effects — nothing saved, no payment created.
+ * For both methods, mock reservationRepository.findAll() to return a hand-crafted
+ * list of Reservation objects that covers the scenarios you want to test.
+ * Structure and name the tests however you see fit.
  *
- * Scenarios to cover (structure and name the tests as you see fit):
- *   - A valid request returns a ReservationResponse and persists both the Reservation and the Payment
- *   - checkOutDate equal to checkInDate is rejected
- *   - checkOutDate before checkInDate is rejected
- *   - An unknown guestId is rejected
- *   - An unknown roomId is rejected
- *   - An overlapping reservation is rejected and nothing is written to the database
+ * ── search() ────────────────────────────────────────────────────────────────
+ * Build a fixture list that spans multiple guests, statuses, room types, and dates.
+ * Then drive the search with different parameter combinations and assert on the
+ * contents and ordering of the returned list.
+ *
+ * Scenarios to consider:
+ *   - All-null params returns every reservation, sorted by checkInDate
+ *   - Filtering by a single field (guestId, status, roomType, from, to) narrows correctly
+ *   - Combining multiple filters applies all of them (intersection, not union)
+ *   - No match returns an empty list without throwing
+ *
+ * ── summarize() ─────────────────────────────────────────────────────────────
+ * Build a fixture list that includes at least one CANCELLED reservation and at
+ * least one of each active status to make the assertions meaningful.
+ *
+ * Scenarios to consider:
+ *   - CANCELLED reservations are excluded from revenue totals
+ *   - countByStatus has an entry for every status present in the fixture data
+ *   - Revenue is zero when all reservations are CANCELLED
+ *   - averageNights is the arithmetic mean of getNights() across all reservations
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReservationService")
