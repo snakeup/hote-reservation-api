@@ -2,7 +2,6 @@ package com.hotel.reservation.domain.entity;
 
 import com.hotel.reservation.domain.enums.ReservationStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -53,40 +52,38 @@ import java.time.temporal.ChronoUnit;
 @Table(name = "reservations")
 public class Reservation {
 
-    // TODO: add primary key annotation + generation strategy
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: add relationship annotation with fetch type + join column
-    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "guest_id", nullable = false)
     private Guest guest;
 
-    // TODO: add relationship annotation with fetch type + join column
-    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    // TODO: add column annotation
-    @NotNull
+    @Column(name = "check_in_date", nullable = false)
     private LocalDate checkInDate;
 
-    // TODO: add column annotation
-    @NotNull
+    @Column(name = "check_out_date", nullable = false)
     private LocalDate checkOutDate;
 
-    // TODO: add enum mapping + column annotation
-    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private ReservationStatus status;
 
-    // TODO: add column annotation (precision + scale)
-    @NotNull
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
-    // TODO: add column annotation — must never be overwritten after insert
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // TODO: add column annotation
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // TODO: add relationship annotation — inverse side, cascade delete, orphan removal
+    @OneToOne(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Payment payment;
 
     // -------------------------------------------------------------------------

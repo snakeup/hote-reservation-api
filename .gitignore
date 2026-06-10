@@ -26,3 +26,4 @@ replay_pid*
 # Interview artifacts
 docs/
 CLAUDE.md
+target/

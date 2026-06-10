@@ -1,8 +1,6 @@
 package com.hotel.reservation.controller;
 
 import com.hotel.reservation.dto.response.ReservationResponse;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -67,19 +65,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("POST /reservations — Integration Tests")
 class ReservationControllerIntegrationTest {
 
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("hoteldb")
-            .withUsername("hotel")
-            .withPassword("hotel");
+    static PostgreSQLContainer<?> postgres;
 
-    @BeforeAll
-    static void startContainer() {
+    static {
+        postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+                .withDatabaseName("hoteldb")
+                .withUsername("hotel")
+                .withPassword("hotel");
         postgres.start();
-    }
-
-    @AfterAll
-    static void stopContainer() {
-        postgres.stop();
     }
 
     @DynamicPropertySource
