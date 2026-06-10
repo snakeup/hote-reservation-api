@@ -9,44 +9,51 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 /**
- * TODO [TASK-JPA]: This entity is not yet mapped to the database.
- * Add the necessary JPA annotations to each field so Hibernate can persist
- * and load reservations correctly.
+ * TODO [TASK-JPA]: Map this entity to the database.
  *
- * The target table is "reservations". Its schema is defined in V1__create_initial_schema.sql
- * — read it before you start. Hibernate is configured with ddl-auto=validate, meaning it will
- * compare your annotations against the real schema on startup and fail fast if they diverge.
+ * A Reservation is the core business object — it represents a guest's booking of a
+ * specific room from checkInDate to checkOutDate. The guest checks *out* on checkOutDate;
+ * they do not sleep there that night. totalPrice is fixed at booking time and must
+ * never be recalculated. The reservation moves through a lifecycle (PENDING → CONFIRMED
+ * → CHECKED_IN → CHECKED_OUT, or CANCELLED), and has at most one linked Payment that
+ * is deleted whenever the reservation is deleted.
  *
- * Fields to annotate and things to consider for each:
+ * The target table is "reservations". Its schema is in V1__create_initial_schema.sql —
+ * read it before you start. Hibernate is set to ddl-auto=validate, so it will compare
+ * your annotations against the real schema on startup and fail fast if they don't match.
+ *
+ * Fields to annotate:
  *
  *   id            — primary key; which generation strategy matches a BIGSERIAL column?
  *
  *   guest         — many reservations belong to one guest (FK: guest_id, not nullable).
- *                   Should this be loaded eagerly or lazily? What is the risk of the
- *                   wrong choice when loading a list of 10 000 reservations?
+ *                   Should this association be loaded eagerly or lazily?
+ *                   What happens to memory and query count when you load 10 000 reservations
+ *                   with the wrong strategy?
  *
  *   room          — many reservations belong to one room (FK: room_id, not nullable).
- *                   Same fetch strategy question as guest.
+ *                   Same fetch-strategy question as guest.
  *
  *   checkInDate   — column: check_in_date, not nullable.
  *   checkOutDate  — column: check_out_date, not nullable.
  *
- *   status        — stored as its name (e.g. "CONFIRMED"), never as its ordinal.
+ *   status        — the reservation lifecycle state. Must be stored as its name
+ *                   (e.g. "CONFIRMED"), never as its ordinal (0, 1, 2 …).
  *                   Column: status, not nullable.
  *                   Which annotation controls string vs ordinal storage?
  *
- *   totalPrice    — column: total_price, not nullable, precision 10 scale 2.
+ *   totalPrice    — column: total_price, not nullable, precision 10, scale 2.
  *
  *   createdAt     — column: created_at, not nullable.
- *                   This value must be set once at insert time and never changed.
+ *                   Set once when the row is inserted and never changed.
  *                   Which @Column attribute enforces that at the ORM level?
  *
  *   updatedAt     — column: updated_at.
  *
  *   payment       — one reservation has at most one payment.
  *                   The foreign key lives on the payments table (Payment is the owning side).
- *                   If a reservation is deleted its payment must be deleted too.
- *                   Which combination of cascade and attribute on @OneToOne achieves that?
+ *                   Deleting a reservation must delete its payment.
+ *                   Which combination of cascade type and @OneToOne attribute achieves that?
  */
 @Entity
 @Table(name = "reservations")

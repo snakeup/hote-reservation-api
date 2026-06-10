@@ -31,34 +31,24 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * TODO [TASK-TESTS-UNIT]: Implement unit tests for ReservationService.book().
+ * TODO [TASK-TESTS-UNIT]: Unit-test ReservationService.book().
  *
- * The mock setup and test fixtures are provided — you write the test bodies.
+ * These tests run without Spring and without a database. Every collaborator is a
+ * Mockito mock, so each test is laser-focused on one behaviour of the booking logic.
+ * The setup and fixtures are already provided — you write the tests.
  *
- * Required scenarios (minimum — add more if you have time):
+ * Think of the booking flow as a pipeline of guards:
+ *   date validation → guest exists → room exists → no overlap → persist both → return response
+ * A good test suite verifies that each guard fires correctly and that a failure in one
+ * guard leaves no side effects — nothing saved, no payment created.
  *
- *   HAPPY PATH
- *     [ ] A valid request creates and returns a ReservationResponse.
- *         Verify that both reservationRepository.save() and paymentRepository.save()
- *         were called exactly once.
- *
- *   VALIDATION
- *     [ ] checkOutDate equal to checkInDate throws IllegalArgumentException.
- *     [ ] checkOutDate before checkInDate throws IllegalArgumentException.
- *
- *   NOT FOUND
- *     [ ] Unknown guestId throws ResourceNotFoundException.
- *     [ ] Unknown roomId throws ResourceNotFoundException.
- *
- *   CONFLICT
- *     [ ] Overlapping reservation throws RoomNotAvailableException.
- *         Verify that neither reservationRepository.save() nor paymentRepository.save()
- *         was called (no partial writes).
- *
- * Tips:
- *   - Follow the same @Nested class structure as RoomServiceTest.
- *   - Use ArgumentCaptor if you want to assert on what was actually saved.
- *   - verifyNoInteractions() is your friend for asserting nothing was persisted.
+ * Scenarios to cover (structure and name the tests as you see fit):
+ *   - A valid request returns a ReservationResponse and persists both the Reservation and the Payment
+ *   - checkOutDate equal to checkInDate is rejected
+ *   - checkOutDate before checkInDate is rejected
+ *   - An unknown guestId is rejected
+ *   - An unknown roomId is rejected
+ *   - An overlapping reservation is rejected and nothing is written to the database
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReservationService")
@@ -97,64 +87,5 @@ class ReservationServiceTest {
         return new CreateReservationRequest(1L, 1L, checkIn, checkOut);
     }
 
-    // -------------------------------------------------------------------------
-    // TODO: write your @Nested test classes here.
-    // Start with the happy path, then add failure scenarios one by one.
-    // -------------------------------------------------------------------------
-
-    @Nested
-    @DisplayName("book — happy path")
-    class BookHappyPath {
-
-        @Test
-        @DisplayName("returns ReservationResponse and persists both reservation and payment")
-        void returnsResponseAndPersistsBoth() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("book — date validation")
-    class BookDateValidation {
-
-        @Test
-        @DisplayName("throws IllegalArgumentException when checkOut equals checkIn")
-        void throwsWhenDatesAreEqual() {
-            // TODO
-        }
-
-        @Test
-        @DisplayName("throws IllegalArgumentException when checkOut is before checkIn")
-        void throwsWhenCheckOutBeforeCheckIn() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("book — not found")
-    class BookNotFound {
-
-        @Test
-        @DisplayName("throws ResourceNotFoundException when guest does not exist")
-        void throwsWhenGuestNotFound() {
-            // TODO
-        }
-
-        @Test
-        @DisplayName("throws ResourceNotFoundException when room does not exist")
-        void throwsWhenRoomNotFound() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("book — conflict")
-    class BookConflict {
-
-        @Test
-        @DisplayName("throws RoomNotAvailableException and saves nothing when room is already booked")
-        void throwsAndSavesNothingWhenRoomTaken() {
-            // TODO
-        }
-    }
+    // TODO: add your test classes here
 }

@@ -62,11 +62,23 @@ public class ReservationService {
     /**
      * TODO [TASK-SERVICE]: Implement the reservation booking flow.
      *
-     * Business rules (read carefully before writing a single line):
+     * A guest has selected a room and a date range. Before committing the booking the
+     * system must verify that the dates make sense and that no active reservation
+     * already holds the room for any part of that period. A room is considered held
+     * by any reservation with status PENDING, CONFIRMED, or CHECKED_IN — a mere
+     * cancellation is not enough to block a booking, but an in-progress stay is.
+     *
+     * When the booking is valid, create the Reservation and its linked Payment in a
+     * single transaction. If anything fails after the Reservation is saved but before
+     * the Payment is saved, both writes must be rolled back — a reservation without a
+     * payment must never exist in the database.
+     *
+     * Steps:
      *
      *   1. checkOutDate must be strictly after checkInDate.
-     *      Throw IllegalArgumentException if not. Think about the edge case:
-     *      what happens if they are equal?
+     *      Throw IllegalArgumentException if not.
+     *      Think carefully about the equal-date edge case — what does it mean for a
+     *      guest to check in and out on the same day?
      *
      *   2. The guest identified by request.guestId() must exist.
      *      Throw ResourceNotFoundException if not.
@@ -74,28 +86,22 @@ public class ReservationService {
      *   3. The room identified by request.roomId() must exist.
      *      Throw ResourceNotFoundException if not.
      *
-     *   4. No existing PENDING, CONFIRMED, or CHECKED_IN reservation may overlap
-     *      the requested period for that room.
+     *   4. No active reservation (PENDING / CONFIRMED / CHECKED_IN) may overlap the
+     *      requested period for that room.
      *      Use ReservationRepository.existsOverlappingReservation().
-     *      Throw RoomNotAvailableException if overlap is detected.
+     *      Throw RoomNotAvailableException if an overlap is detected.
      *
-     *   5. Create and persist a Reservation with status PENDING.
+     *   5. Create and persist a Reservation (status starts as PENDING).
+     *      The Reservation constructor calculates totalPrice — you don't need to.
      *
      *   6. Create and persist a Payment linked to that reservation.
-     *      The payment amount equals the reservation's totalPrice.
+     *      Payment's constructor takes (reservation, amount).
+     *      The amount equals the reservation's totalPrice.
      *
      *   7. Return a ReservationResponse mapped from the saved reservation.
      *
-     * Transaction requirement:
-     *   Steps 5 and 6 must be atomic. If persisting the Payment fails,
-     *   the Reservation must also be rolled back.
-     *   How does the @Transactional annotation on this method relate to the
-     *   readOnly=true on the class-level annotation?
-     *
-     * Hints:
-     *   - Reservation's constructor already calculates totalPrice — you don't need to.
-     *   - Payment's constructor takes (reservation, amount).
-     *   - Look at how other services load entities — follow the same pattern.
+     * How does the method-level @Transactional here relate to the class-level
+     * @Transactional(readOnly = true)? Why does that distinction matter for steps 5–6?
      */
     @Transactional
     public ReservationResponse book(CreateReservationRequest request) {

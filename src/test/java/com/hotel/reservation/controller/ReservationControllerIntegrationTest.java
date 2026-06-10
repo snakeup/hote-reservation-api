@@ -21,12 +21,21 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * TODO [TASK-TESTS-INTEGRATION]: Implement integration tests for POST /reservations.
+ * TODO [TASK-TESTS-INTEGRATION]: Integration-test POST /reservations.
  *
- * The container setup is provided — you write the test bodies.
- * Follow the exact same patterns as RoomControllerIntegrationTest.
+ * These tests boot the full Spring application against a real PostgreSQL database
+ * (spun up by Testcontainers). Flyway runs automatically, applying the schema (V1)
+ * and seed data (V2) before any test runs. The container setup and RestClient are
+ * already wired — you write the tests. Follow the same patterns as
+ * RoomControllerIntegrationTest.
  *
- * To POST a JSON body use:
+ * Seed data to know:
+ *   - Room 1 (101, SINGLE) has a CONFIRMED reservation for guest 1 from 2025-09-01
+ *     to 2025-09-05. Use this range to trigger the conflict scenario.
+ *   - Rooms 2–7 and guests 2–3 have no existing reservations — use them for
+ *     happy-path and other tests.
+ *
+ * To POST a JSON body:
  *   ResponseEntity<ReservationResponse> response = restClient.post()
  *       .uri("/reservations")
  *       .contentType(MediaType.APPLICATION_JSON)
@@ -36,29 +45,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       .onStatus(status -> status.isError(), (req, res) -> {})
  *       .toEntity(ReservationResponse.class);
  *
- * Required scenarios:
- *
- *   HAPPY PATH — HTTP 201
- *     [ ] Valid booking returns 201 with status "PENDING" and non-null totalPrice.
- *         Assert a Location header is present pointing to the new resource.
- *         Use guests 2 or 3 and rooms 2-7 (no existing reservations in seed data).
- *         Use future dates to avoid overlap with seed data.
- *
- *   VALIDATION — HTTP 400
- *     [ ] Missing guestId returns 400.
- *     [ ] Missing checkInDate returns 400.
- *
- *   NOT FOUND — HTTP 404
- *     [ ] Non-existent guestId (e.g. 9999) returns 404.
- *     [ ] Non-existent roomId (e.g. 9999) returns 404.
- *
- *   CONFLICT — HTTP 409
- *     [ ] Booking room 1 for 2025-09-01 to 2025-09-05 overlaps the seed reservation — returns 409.
- *
- *   DATE VALIDATION — what status does it return today?
- *     [ ] checkOutDate equal to checkInDate.
- *         Look at GlobalExceptionHandler. What does IllegalArgumentException map to?
- *         Is that correct? What would you change?
+ * Scenarios to cover (structure and name the tests as you see fit):
+ *   - A valid booking returns 201, status "PENDING", a non-null totalPrice, and a Location header
+ *   - Missing required fields (e.g. guestId, checkInDate) return 400
+ *   - A non-existent guestId returns 404
+ *   - A non-existent roomId returns 404
+ *   - Dates that overlap the seed reservation return 409
+ *   - checkOutDate equal to checkInDate — what status does the API return today?
+ *     Is that the right status for a client mistake? What would you change?
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -94,59 +88,5 @@ class ReservationControllerIntegrationTest {
                 .build();
     }
 
-    @Nested
-    @DisplayName("happy path")
-    class HappyPath {
-
-        @Test
-        @DisplayName("valid booking returns HTTP 201 with ReservationResponse and Location header")
-        void validBooking_returns201() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("validation errors")
-    class ValidationErrors {
-
-        @Test
-        @DisplayName("missing guestId returns HTTP 400")
-        void missingGuestId_returns400() {
-            // TODO
-        }
-
-        @Test
-        @DisplayName("missing checkInDate returns HTTP 400")
-        void missingCheckInDate_returns400() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("not found")
-    class NotFound {
-
-        @Test
-        @DisplayName("unknown guestId returns HTTP 404")
-        void unknownGuest_returns404() {
-            // TODO
-        }
-
-        @Test
-        @DisplayName("unknown roomId returns HTTP 404")
-        void unknownRoom_returns404() {
-            // TODO
-        }
-    }
-
-    @Nested
-    @DisplayName("conflict")
-    class Conflict {
-
-        @Test
-        @DisplayName("overlapping dates return HTTP 409")
-        void overlappingDates_returns409() {
-            // TODO
-        }
-    }
+    // TODO: add your test classes here
 }
